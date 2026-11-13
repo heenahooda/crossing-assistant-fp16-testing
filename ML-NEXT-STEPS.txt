@@ -1,0 +1,11 @@
+CROSSING ASSISTANT ML — STARTER NOTES
+
+This is a separate copy of the existing PWA plus the Float16 TFLite model.
+The original project files are not modified.
+
+IMPORTANT:
+- The model's input/output tensors and task have not yet been verified.
+- Do not connect model outputs to real-world crossing instructions until validated.
+- First inspect the .tflite file in https://netron.app and record input/output names,
+  shapes, and data types.
+- This is a research prototype, not a validated mobility aid.

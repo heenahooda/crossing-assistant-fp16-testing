@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crossing Assistant</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F4F3ED">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Crossing">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+--bg:#F4F3ED;--surface:#FFFFFF;--text:#1E2B22;--muted:#55625A;--line:#CBC9BA;
+--accent:#2F6F4E;--accent-ink:#FFFFFF;--danger:#B5432E;--danger-ink:#FFFFFF;--focus:#0B57D0;
+--font:-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Sans",sans-serif;--head-font:Georgia,"Iowan Old Style","Noto Serif JP",serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:1.0625rem;line-height:1.5;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:0;background:var(--accent);color:var(--accent-ink);padding:12px 16px;z-index:10;font-weight:700}
+.skip:focus{left:8px;top:8px}
+.app{max-width:480px;margin:0 auto;padding:12px 20px 40px}
+.top{display:flex;justify-content:flex-end;padding:4px 0 8px}
+.lang{display:inline-flex;border:2px solid var(--line);border-radius:999px;overflow:hidden}
+.lang button{min-height:44px;min-width:88px;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:0 16px}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.screen{display:none;flex-direction:column;gap:16px}
+.screen.active{display:flex}
+h1{font-family:var(--head-font);font-size:1.9rem;line-height:1.2;margin:8px 0 0}
+h1:focus{outline:none}
+h2{font-size:1.2rem;margin:10px 0 0}
+h3{font-size:1rem;margin:4px 0 0;color:var(--muted)}
+p{margin:0}
+.sub,.desc,.hint,.caption{color:var(--muted)}
+.lead{font-size:1.3rem;font-weight:700;margin-top:10px}
+.hint{text-align:center;margin-top:-6px}
+button{font:inherit;cursor:pointer}
+.big{width:100%;min-height:72px;border-radius:18px;border:2px solid transparent;font-size:1.2rem;font-weight:800;letter-spacing:.3px;padding:16px;background:var(--accent);color:var(--accent-ink)}
+#mainBtn{min-height:108px;font-size:1.55rem}
+.big.stop{background:var(--danger);color:var(--danger-ink)}
+.big.secondary{background:var(--surface);color:var(--text);border-color:var(--line)}
+.small-btn{min-height:56px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--text);font-weight:700;padding:10px 16px}
+.back{align-self:flex-start}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+.status,.rows{list-style:none;margin:0;padding:0;border:2px solid var(--line);border-radius:16px;background:var(--surface)}
+.status li,.rows li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.status li:last-child,.rows li:last-child{border-bottom:0}
+.status .k{color:var(--muted)}
+.status .v{text-align:right}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links .small-btn{flex:1 1 auto}
+.disclaimer{font-size:.92rem;color:var(--muted);text-align:center;border-top:1px solid var(--line);padding-top:14px}
+.card{border:2px solid var(--line);border-radius:16px;background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:10px}
+.notice{border-left:6px solid var(--accent);padding:10px 14px;background:var(--surface);border-radius:8px;font-weight:700}
+.cam{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;border:2px solid var(--line);
+  background:linear-gradient(180deg,#2A3A4A 0%,#374A5C 45%,#556B4E 46%,#3D5540 100%)}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.zebra{position:absolute;bottom:0;left:22%;right:22%;height:55%;
+  background-image:repeating-linear-gradient(0deg,#EEE 0,#EEE 8px,transparent 8px,transparent 18px);
+  clip-path:polygon(10% 100%,90% 100%,75% 0%,25% 0%)}
+.sigdot{position:absolute;top:12px;right:14px;width:22px;height:22px;border-radius:50%;border:3px solid #fff}
+.guidance{font-size:1.25rem;font-weight:700;min-height:2.6em;padding:12px 14px;background:var(--surface);border:2px solid var(--line);border-radius:14px}
+.strip{display:flex;height:30px;gap:3px;background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:4px}
+.strip .on{background:var(--accent);border-radius:4px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:14px;border:2px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px}
+.sw{min-width:92px;min-height:56px;border-radius:999px;border:2px solid var(--line);background:var(--bg);color:var(--text);font-weight:800}
+.sw[aria-checked="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+details.demo{border:2px dashed var(--line);border-radius:14px;padding:10px 14px}
+details.demo summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.grid .small-btn{min-height:56px}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+ol.pipe{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+ol.pipe li{border:2px solid var(--line);border-radius:14px;background:var(--surface);padding:12px 16px;display:flex;flex-direction:column}
+ol.pipe li span{color:var(--muted);font-size:.95rem}
+ol.pipe li+li::before{content:"\2193";text-align:center;color:var(--muted);margin:-2px 0 4px;display:block}
+.danger{border:4px solid var(--danger);border-radius:16px;background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:12px}
+.danger:focus{outline:none}
+.danger strong{font-size:1.5rem;color:var(--danger);letter-spacing:1px}
+.danger p{font-size:1.25rem;font-weight:800}
+a.big{display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+.field{display:flex;flex-direction:column;gap:6px;font-weight:700}
+.field input{min-height:56px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-weight:400;padding:0 14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to main content</a>
+<div id="announce" class="sr" aria-live="polite" aria-atomic="true"></div>
+<div id="alert" class="sr" role="alert"></div>
+<div class="app">
+<header class="top">
+  <div class="lang" role="group" aria-label="Language" data-i18n-label="langGroup">
+    <button type="button" id="langEn" lang="en" aria-pressed="true">English</button>
+    <button type="button" id="langJa" lang="ja" aria-pressed="false">日本語</button>
+  </div>
+</header>
+<main id="main">
+
+<!-- HOME -->
+<section class="screen active" id="screen-home" aria-labelledby="h-home">
+  <h1 id="h-home" tabindex="-1" data-i18n="title">Crossing Assistant</h1>
+  <p class="sub" data-i18n="subtitle">Accessible pedestrian support</p>
+  <p class="lead" data-i18n="readyLead">Ready to begin?</p>
+  <button type="button" id="mainBtn" class="big"></button>
+  <p class="hint" data-i18n="readyHint">Audio guidance and vibration feedback</p>
+
+  <h2 data-i18n="statusHeading">Status</h2>
+  <ul class="status">
+    <li><span class="k" data-i18n="lblAudio">Audio guidance</span><strong class="v" id="stAudio"></strong></li>
+    <li><span class="k" data-i18n="lblVoice">Voice commands</span><strong class="v" id="stVoice"></strong></li>
+    <li><span class="k" data-i18n="lblVib">Vibration feedback</span><strong class="v" id="stVib"></strong></li>
+    <li><span class="k" data-i18n="lblCam">Camera</span><strong class="v" id="stCam"></strong></li>
+    <li><span class="k" data-i18n="lblDet">Detection</span><strong class="v" id="stDet"></strong></li>
+  </ul>
+
+  <div id="livePanel" hidden>
+    <div class="screen active" style="gap:12px">
+      <h2 data-i18n="liveHeading">Live assistance</h2>
+      <div id="dangerBox" class="danger" tabindex="-1" hidden>
+        <strong data-i18n="dangerHeading">DANGER</strong>
+        <p id="dangerText"></p>
+        <a id="callLink" class="big stop" href="#" hidden></a>
+        <button type="button" id="dismissBtn" class="big secondary" data-i18n="dismissBtn">Dismiss alert</button>
+      </div>
+      <div class="cam" id="camBox">
+        <video id="camVideo" autoplay muted playsinline hidden></video>
+        <div class="zebra" id="zebra" hidden></div>
+        <div class="sigdot" id="sigdot" hidden></div>
+      </div>
+      <p class="caption" data-i18n="camCaption">Rear camera view. Overlays are simulated.</p>
+      <h3 data-i18n="detHeading">Detection (simulated)</h3>
+      <ul class="status">
+        <li><span class="k" data-i18n="lblCross">Crosswalk</span><strong class="v" id="dCross"></strong></li>
+        <li><span class="k" data-i18n="lblSignal">Pedestrian signal</span><strong class="v" id="dSig"></strong></li>
+        <li><span class="k" data-i18n="lblDist">Distance</span><strong class="v" id="dDist"></strong></li>
+        <li><span class="k" data-i18n="lblVeh">Vehicle</span><strong class="v" id="dVeh"></strong></li>
+      </ul>
+      <h3 data-i18n="guidanceHeading">Latest guidance</h3>
+      <p class="guidance" id="guidanceText"></p>
+      <h3 data-i18n="vibHeading">Vibration pattern</h3>
+      <div class="strip" id="patternStrip" aria-hidden="true"></div>
+      <p id="patternLabel"></p>
+      <button type="button" id="repeatBtn" class="big secondary" data-i18n="repeatBtn">Repeat guidance</button>
+      <details class="demo">
+        <summary data-i18n="demoSummary">Research demo controls (simulation)</summary>
+        <p class="desc" data-i18n="demoNote">These buttons simulate detections.</p>
+        <p class="desc" data-i18n="demoTry"></p>
+        <div class="grid">
+          <button type="button" class="small-btn" id="bCross" data-i18n="btnCross">Crosswalk</button>
+          <button type="button" class="small-btn" id="bUnc" data-i18n="btnUnc">Uncertain</button>
+          <button type="button" class="small-btn" id="bRed" data-i18n="btnRed">Red signal</button>
+          <button type="button" class="small-btn" id="bGreen" data-i18n="btnGreen">Green signal</button>
+          <button type="button" class="small-btn" data-dist="10">10 m</button>
+          <button type="button" class="small-btn" data-dist="5">5 m</button>
+          <button type="button" class="small-btn" data-dist="2">2 m</button>
+          <button type="button" class="small-btn" id="bRoad" data-i18n="btnRoad">In the road (0 m)</button>
+          <button type="button" class="small-btn" id="bVeh" aria-pressed="false" data-i18n="btnVeh">Vehicle approaching</button>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <button type="button" class="big secondary" data-nav="help" data-i18n="helpBtn">HELP &amp; INSTRUCTIONS</button>
+  <div class="links">
+    <button type="button" class="small-btn" data-nav="settings" data-i18n="navSettings">Settings</button>
+    <button type="button" class="small-btn" data-nav="research" data-i18n="navResearch">Research testing</button>
+    <button type="button" class="small-btn" data-nav="about" data-i18n="navAbout">About this project</button>
+  </div>
+  <p class="disclaimer" data-i18n="disclaimer">Research prototype · Not validated for independent road crossing</p>
+</section>
+
+<!-- HELP -->
+<section class="screen" id="screen-help" aria-labelledby="h-help">
+  <button type="button" class="small-btn back" data-nav="home" data-i18n="back">← Back</button>
+  <h1 id="h-help" tabindex="-1" data-i18n="helpTitle">Help &amp; Instructions</h1>
+  <div class="card">
+    <h2 data-i18n="emHeading">Emergency help</h2>
+    <p data-i18n="emText"></p>
+    <button type="button" id="sosBtn" class="big secondary" data-i18n="emDemoBtn">Practice asking for help (demo only)</button>
+    <p id="sosResult" class="notice" role="status" hidden></p>
+  </div>
+  <h2 data-i18n="howHeading">How to use</h2>
+  <ol class="steps">
+    <li data-i18n="how1"></li><li data-i18n="how2"></li><li data-i18n="how3"></li><li data-i18n="how4"></li>
+  </ol>
+  <h2 data-i18n="voiceHeading">Voice commands</h2>
+  <p data-i18n="voiceText"></p>
+  <h2 data-i18n="vibHeading2">Vibration patterns</h2>
+  <p class="desc" data-i18n="vibNote"></p>
+  <ul class="rows">
+    <li><span data-i18n="vd_crosswalk"></span><button type="button" class="small-btn" data-play="crosswalk" data-i18n="playBtn">Play</button></li>
+    <li><span data-i18n="vd_red"></span><button type="button" class="small-btn" data-play="red" data-i18n="playBtn">Play</button></li>
+    <li><span data-i18n="vd_green"></span><button type="button" class="small-btn" data-play="green" data-i18n="playBtn">Play</button></li>
+    <li><span data-i18n="vd_uncertain"></span><button type="button" class="small-btn" data-play="uncertain" data-i18n="playBtn">Play</button></li>
+  </ul>
+  <h2 data-i18n="alertsHeading">Alerts</h2>
+  <p data-i18n="alertsText"></p>
+  <h2 data-i18n="safetyHeading">Safety</h2>
+  <p data-i18n="safetyText"></p>
+</section>
+
+<!-- SETTINGS -->
+<section class="screen" id="screen-settings" aria-labelledby="h-settings">
+  <button type="button" class="small-btn back" data-nav="home" data-i18n="back">← Back</button>
+  <h1 id="h-settings" tabindex="-1" data-i18n="settingsTitle">Settings</h1>
+  <div class="row">
+    <div><strong id="lblSpoken" data-i18n="setSpoken">Spoken guidance</strong><p class="desc" data-i18n="setSpokenDesc"></p></div>
+    <button type="button" role="switch" id="swSpoken" class="sw" aria-checked="true" aria-labelledby="lblSpoken"></button>
+  </div>
+  <div class="row">
+    <div><strong id="lblVoiceCmd" data-i18n="setVoice">Voice commands</strong><p class="desc" data-i18n="setVoiceDesc"></p></div>
+    <button type="button" role="switch" id="swVoice" class="sw" aria-checked="true" aria-labelledby="lblVoiceCmd"></button>
+  </div>
+  <button type="button" id="testSpeech" class="big secondary" data-i18n="testSpeech">Test spoken guidance</button>
+  <button type="button" id="testVib" class="big secondary" data-i18n="testVib">Test vibration</button>
+  <h2 data-i18n="ecHeading">Emergency contact</h2>
+  <p class="desc" data-i18n="ecNote"></p>
+  <label class="field"><span data-i18n="ecName">Contact name</span><input id="ecName" type="text" autocomplete="off"></label>
+  <label class="field"><span data-i18n="ecNumber">Contact phone number</span><input id="ecNumber" type="tel" inputmode="tel" autocomplete="off"></label>
+  <button type="button" id="ecSave" class="big secondary" data-i18n="ecSave">Save contact</button>
+  <p id="ecSaved" class="notice" role="status" hidden></p>
+  <div class="row">
+    <div><strong id="lblDial" data-i18n="ecDial">Open the dialer automatically in an emergency</strong><p class="desc" data-i18n="ecDialDesc"></p></div>
+    <button type="button" role="switch" id="swDial" class="sw" aria-checked="false" aria-labelledby="lblDial"></button>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section class="screen" id="screen-research" aria-labelledby="h-research">
+  <button type="button" class="small-btn back" data-nav="home" data-i18n="back">← Back</button>
+  <h1 id="h-research" tabindex="-1" data-i18n="researchTitle">Research &amp; testing</h1>
+  <div class="card">
+    <h2 data-i18n="vrHeading">VR test mode</h2>
+    <p data-i18n="vrText"></p>
+    <p class="notice" data-i18n="vrTag"></p>
+  </div>
+
+  <div class="card research-model-lab" id="researchModelLab">
+    <h2>Four-model FP16 evaluation</h2>
+    <p class="desc">Test each model individually using an image or the phone camera. This is an inspection and benchmarking tool; it does not provide validated crossing guidance.</p>
+    <label class="field" for="evalModel"><span>Model</span><select id="evalModel">
+      <option value="canonical_gt_fp16">Canonical GT FP16</option>
+      <option value="canonical_pseudo_fp16">Canonical Pseudo FP16</option>
+      <option value="normal_gt_fp16">Normal GT FP16</option>
+      <option value="normal_pseudo_fp16">Normal Pseudo FP16</option>
+    </select></label>
+    <div class="row" style="gap:10px;flex-wrap:wrap;margin:12px 0">
+      <button type="button" class="big secondary" id="evalLoad">Load selected model</button>
+      <button type="button" class="big secondary" id="evalRun" disabled>Run image test</button>
+    </div>
+    <label class="field"><span>Choose a crossing test image</span><input id="evalImage" type="file" accept="image/*"></label>
+    <div class="row" style="gap:12px;align-items:flex-start;flex-wrap:wrap;margin-top:10px">
+      <img id="evalPreview" alt="Selected test image preview" hidden style="max-width:180px;max-height:180px;border-radius:12px;object-fit:contain">
+      <canvas id="evalInputPreview" width="256" height="256" aria-label="Resized model input preview" style="max-width:180px;background:#222;border-radius:12px"></canvas>
+    </div>
+    <p id="evalStatus" class="notice" role="status" aria-live="polite">Runtime not loaded. Internet is required to download the browser TFLite runtime on first use.</p>
+    <div class="card" style="margin-top:12px">
+      <h3>Measured model output</h3>
+      <p id="evalModelInfo" class="desc">No model loaded.</p>
+      <p id="evalTiming" class="notice">Inference time: —</p>
+      <pre id="evalOutput" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;font-size:12px">No inference run yet.</pre>
+    </div>
+    <h3>Six evaluation metrics</h3>
+    <p class="desc">Accuracy metrics stay blank until the same labelled test set and annotation rules are supplied. Do not treat model output confidence as accuracy.</p>
+    <div style="overflow-x:auto"><table class="eval-metrics" style="width:100%;border-collapse:collapse">
+      <thead><tr><th scope="col">Metric</th><th scope="col">Result</th><th scope="col">What is needed</th></tr></thead>
+      <tbody>
+       <tr><th scope="row">Depth error by range</th><td>Not measured</td><td>Ground-truth depth in metres + range bins</td></tr>
+       <tr><th scope="row">IoU</th><td>Not measured</td><td>Ground-truth crossing boxes/masks</td></tr>
+       <tr><th scope="row">Keypoints</th><td>Not measured</td><td>Annotated keypoint coordinates</td></tr>
+       <tr><th scope="row">Signal F1</th><td>Not measured</td><td>Ground-truth signal classes + class order</td></tr>
+       <tr><th scope="row">False-green rate</th><td>Not measured</td><td>Labelled red/no-green examples + confirmed class order</td></tr>
+       <tr><th scope="row">Phone speed</th><td id="evalPhoneSpeed">Not measured</td><td>Run this test on the target phone</td></tr>
+      </tbody>
+    </table></div>
+    <p class="desc" style="margin-top:12px">Speed is model-only inference on the selected image (warm-up excluded). It is not end-to-end camera FPS and does not include camera capture, preprocessing, or postprocessing.</p>
+    <button type="button" class="small-btn" id="evalExport" disabled>Download this model's result (JSON)</button>
+  </div>
+
+</section>
+
+<!-- ABOUT -->
+<section class="screen" id="screen-about" aria-labelledby="h-about">
+  <button type="button" class="small-btn back" data-nav="home" data-i18n="back">← Back</button>
+  <h1 id="h-about" tabindex="-1" data-i18n="aboutTitle">About this project</h1>
+  <p data-i18n="aboutText"></p>
+  <h2 data-i18n="pipeHeading">How it works (concept)</h2>
+  <ol class="pipe">
+    <li><strong data-i18n="pipe1"></strong><span data-i18n="pipe1s"></span></li>
+    <li><strong data-i18n="pipe2"></strong><span data-i18n="pipe2s"></span></li>
+    <li><strong data-i18n="pipe3"></strong><span data-i18n="pipe3s"></span></li>
+    <li><strong data-i18n="pipe4"></strong><span data-i18n="pipe4s"></span></li>
+  </ol>
+  <h2 data-i18n="principlesHeading">Design principles</h2>
+  <ul class="steps" style="list-style:disc">
+    <li data-i18n="prin1"></li><li data-i18n="prin2"></li><li data-i18n="prin3"></li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ======================= i18n ======================= */
+const STR = {
+en: {
+  title:"Crossing Assistant", subtitle:"Accessible pedestrian support", skip:"Skip to main content", langGroup:"Language",
+  readyLead:"Ready to begin?", readyHint:"Audio guidance and vibration feedback",
+  startBtn:"START ASSISTANCE", stopBtn:"STOP ASSISTANCE",
+  statusHeading:"Status", lblAudio:"Audio guidance", lblVoice:"Voice commands", lblVib:"Vibration feedback", lblCam:"Camera", lblDet:"Detection",
+  audio_ready:"Ready", audio_nojp:"Ready (no Japanese voice found; using default voice)", audio_off:"Off (text only)", audio_unavail:"Unavailable on this device",
+  voice_starting:"Starting…", voice_listening:"Listening", voice_off:"Off", voice_wait:"Off until you press Start", voice_denied:"Unavailable: microphone permission needed", voice_unavail:"Unavailable on this device",
+  vib_available:"Available", vib_unsupported:"Not supported on this device",
+  cam_off:"Off", cam_starting:"Starting…", cam_on:"On", cam_denied:"Unavailable: camera permission needed", cam_none:"No camera found", cam_error:"Unavailable",
+  det_sim:"Simulated (no model loaded)",
+  helpBtn:"HELP & INSTRUCTIONS", navSettings:"Settings", navResearch:"Research testing", navAbout:"About this project",
+  disclaimer:"Research prototype · Not validated for independent road crossing", back:"← Back",
+  liveHeading:"Live assistance", camCaption:"Rear camera view. Overlays are simulated.", detHeading:"Detection (simulated)",
+  lblCross:"Crosswalk", lblSignal:"Pedestrian signal", lblDist:"Distance",
+  cross_none:"Not detected", cross_yes:"Detected", sig_none:"Not detected", sig_red:"Red", sig_green:"Green", sig_unc:"Unconfirmed",
+  guidanceHeading:"Latest guidance", vibHeading:"Vibration pattern",
+  pat_start:"One short pulse", pat_crosswalk:"One short pulse", pat_distance:"Two short pulses", pat_red:"Long, slow pulses", pat_green:"Short, repeated pulses", pat_uncertain:"Strong, rapid pulses",
+  repeatBtn:"Repeat guidance", demoSummary:"Research demo controls (simulation)", demoNote:"These buttons simulate detections for demonstration. They are not real detections.",
+  btnCross:"Crosswalk", btnRed:"Red signal", btnGreen:"Green signal", btnUnc:"Uncertain", distLabel:"Distance {n} metres",
+  helpTitle:"Help & Instructions", emHeading:"Emergency help",
+  emText:"In a real emergency in Japan, call 110 for police or 119 for fire and ambulance. This prototype cannot contact anyone.",
+  emDemoBtn:"Practice asking for help (demo only)", sosDemo:"Demo only. No one was contacted.",
+  howHeading:"How to use", how1:"Press Start Assistance.", how2:"Allow the camera and microphone if asked.", how3:"Hold the phone upright, facing the way you are walking.", how4:"Listen for guidance. Say “stop” or press Stop Assistance to finish.",
+  voiceHeading:"Voice commands",
+  voiceText:"Say “start” or “camera” to begin, “stop” to end, or “help” to open this page. Speak in the language you selected. Voice commands work only on devices and browsers that support them; the Status list shows whether the app is actually listening.",
+  vibHeading2:"Vibration patterns", vibNote:"Vibration is a supporting cue only. Never rely on it alone.", playBtn:"Play",
+  vd_crosswalk:"Crosswalk ahead: one short pulse", vd_red:"Red signal: long, slow pulses", vd_green:"Green signal: short, repeated pulses", vd_uncertain:"Uncertain: strong, rapid pulses",
+  safetyHeading:"Safety", safetyText:"This is a research prototype and has not been validated for independent road crossing. Detections here are simulated. Always use your cane, guide dog or other mobility aids, and listen to traffic.",
+  settingsTitle:"Settings", setSpoken:"Spoken guidance", setSpokenDesc:"Turn off if your screen reader already reads updates, to avoid hearing everything twice.",
+  setVoice:"Voice commands", setVoiceDesc:"Listen for start, stop and help.", on:"On", off:"Off", testSpeech:"Test spoken guidance", testVib:"Test vibration",
+  researchTitle:"Research & testing", vrHeading:"VR test mode",
+  vrText:"Future HCI evaluation environment. Virtual road-crossing scenarios could be used to evaluate voice and vibration feedback before testing in real environments.",
+  vrTag:"Concept only. Not yet implemented.", modelHeading:"Detection model",
+  modelText:"No detection model is loaded. The detections shown in this prototype are simulated so the interface can be studied on its own.",
+  aboutTitle:"About this project",
+  aboutText:"Crossing Assistant explores how computer-vision output can become clear voice and vibration guidance for blind and visually impaired pedestrians. It is designed to complement Japan's Tenji tactile paving and melody pedestrian signals.",
+  pipeHeading:"How it works (concept)", pipe1:"Camera / AI", pipe1s:"crosswalk · signal · distance", pipe2:"HCI interpretation", pipe2s:"raw detections become one clear instruction",
+  pipe3:"Voice + haptic feedback", pipe3s:"a spoken sentence with a matching vibration", pipe4:"User", pipe4s:"acts hands-free",
+  principlesHeading:"Design principles", prin1:"Audio first. The screen is secondary.", prin2:"No safety information is given by colour alone.", prin3:"When the system is unsure, it never tells the user to cross.",
+  startAssist:"Assistance started. Research prototype: detections are simulated.", stopAssist:"Assistance stopped.",
+  crosswalk:"Crosswalk ahead. Four metres.", dist10:"Crosswalk ahead. Ten metres.", dist5:"Crosswalk ahead. Five metres.", dist2:"Crosswalk starts in two metres.",
+  red:"Red pedestrian signal detected. Please wait.", green:"Green pedestrian signal detected. Check for traffic before you cross.",
+  uncertain:"The crossing signal could not be confirmed. Please wait.",
+  camDenied:"Camera permission was denied. Detection cannot run.", camNone:"No camera was found. Detection cannot run.", camFail:"The camera could not start. Detection cannot run.",
+  testSpeechMsg:"This is a test of spoken guidance.", vibUnsupported:"Vibration is not supported on this device.", langSet:"Language set to English.",
+  lookAngle:"I can't see the road or a crossing. Please change the camera angle.",
+  cantSeeStop:"I still can't see the path. Please stop. Assistance is stopping.",
+  pathBack:"I can see the path again.",
+  lblVeh:"Vehicle", veh_none:"None detected", veh_yes:"Approaching",
+  btnRoad:"In the road (0 m)", btnVeh:"Vehicle approaching",
+  demoTry:"To test the alerts: press Red signal, then 2 m, then In the road, then Vehicle approaching.",
+  onCrossing:"You are on the crossing. Stay alert.", vehicleNear:"Vehicle approaching. Stay where you are.",
+  dangerHeading:"DANGER", dismissBtn:"Dismiss alert", callBtn:"Call {name}",
+  danger1:"Stop. Red signal ahead. Do not go closer.",
+  danger2:"Stop immediately! You are in the road and the signal is red.",
+  danger3:"Danger! Vehicle approaching. Stop immediately.",
+  callingContact:"Alerting your emergency contact.", noContact:"No emergency contact is set. Add one in Settings.",
+  dangerClear:"Danger cleared.", pat_danger:"Continuous strong pulses",
+  alertsHeading:"Alerts",
+  alertsText:"If the camera cannot see the road or a crossing for 30 seconds, you will be asked to change the camera angle. If it still cannot see after another minute, assistance stops by itself. If you walk toward or into the road on a red signal, you will hear “Stop” and feel strong vibration. If a vehicle approaches while you are in the road, the app alerts your emergency contact (set one up in Settings). These are research-prototype features and have not been validated.",
+  ecHeading:"Emergency contact", ecNote:"Stored only on this device.", ecName:"Contact name", ecNumber:"Contact phone number",
+  ecSave:"Save contact", ecSaved:"Contact saved.",
+  ecDial:"Open the dialer automatically in an emergency",
+  ecDialDesc:"A web app cannot place a call by itself. It opens your phone's dialer with this number, and on most phones you still have to press call. Keep this off while testing so no real call is made."
+},
+ja: {
+  title:"横断アシスタント", subtitle:"歩行者のためのアクセシブルな支援", skip:"メインコンテンツへ移動", langGroup:"言語",
+  readyLead:"始めますか？", readyHint:"音声ガイドと振動フィードバック",
+  startBtn:"支援を開始", stopBtn:"支援を停止",
+  statusHeading:"状態", lblAudio:"音声ガイド", lblVoice:"音声コマンド", lblVib:"振動フィードバック", lblCam:"カメラ", lblDet:"検出",
+  audio_ready:"準備完了", audio_nojp:"準備完了（日本語音声が見つからないため標準音声を使用）", audio_off:"オフ（テキストのみ）", audio_unavail:"この端末では利用できません",
+  voice_starting:"起動中…", voice_listening:"聞き取り中", voice_off:"オフ", voice_wait:"開始ボタンを押すまでオフ", voice_denied:"利用不可：マイクの許可が必要です", voice_unavail:"この端末では利用できません",
+  vib_available:"利用可能", vib_unsupported:"この端末では非対応",
+  cam_off:"オフ", cam_starting:"起動中…", cam_on:"オン", cam_denied:"利用不可：カメラの許可が必要です", cam_none:"カメラが見つかりません", cam_error:"利用できません",
+  det_sim:"シミュレーション（モデル未読み込み）",
+  helpBtn:"ヘルプと使い方", navSettings:"設定", navResearch:"研究テスト", navAbout:"このプロジェクトについて",
+  disclaimer:"研究用プロトタイプ・単独での道路横断には検証されていません", back:"← 戻る",
+  liveHeading:"支援中", camCaption:"背面カメラの映像です。重ねて表示される図形は模擬です。", detHeading:"検出（模擬）",
+  lblCross:"横断歩道", lblSignal:"歩行者用信号", lblDist:"距離",
+  cross_none:"未検出", cross_yes:"検出", sig_none:"未検出", sig_red:"赤", sig_green:"青", sig_unc:"未確認",
+  guidanceHeading:"最新のガイド", vibHeading:"振動パターン",
+  pat_start:"短い振動を1回", pat_crosswalk:"短い振動を1回", pat_distance:"短い振動を2回", pat_red:"長くゆっくりした振動", pat_green:"短い振動の繰り返し", pat_uncertain:"強く素早い振動",
+  repeatBtn:"もう一度聞く", demoSummary:"研究用デモ操作（模擬）", demoNote:"これらのボタンは検出を模擬するもので、実際の検出ではありません。",
+  btnCross:"横断歩道", btnRed:"赤信号", btnGreen:"青信号", btnUnc:"不確か", distLabel:"距離 {n} メートル",
+  helpTitle:"ヘルプと使い方", emHeading:"緊急時のヘルプ",
+  emText:"日本で緊急の場合は、警察は110番、消防・救急は119番に電話してください。このプロトタイプは誰にも連絡できません。",
+  emDemoBtn:"ヘルプ依頼の練習（デモのみ）", sosDemo:"デモのため、誰にも連絡していません。",
+  howHeading:"使い方", how1:"「支援を開始」を押します。", how2:"求められたら、カメラとマイクを許可します。", how3:"歩く方向にスマートフォンを向け、立てて持ちます。", how4:"音声ガイドを聞きます。終了するには「停止」と言うか、停止ボタンを押します。",
+  voiceHeading:"音声コマンド",
+  voiceText:"「開始」または「カメラ」で開始、「停止」で終了、「ヘルプ」でこのページを開きます。選択中の言語で話してください。対応する端末とブラウザでのみ動作します。実際に聞き取り中かどうかは状態の一覧で確認できます。",
+  vibHeading2:"振動パターン", vibNote:"振動は補助的な合図です。振動だけに頼らないでください。", playBtn:"再生",
+  vd_crosswalk:"横断歩道：短い振動を1回", vd_red:"赤信号：長くゆっくりした振動", vd_green:"青信号：短い振動の繰り返し", vd_uncertain:"不確か：強く素早い振動",
+  safetyHeading:"安全について", safetyText:"これは研究用プロトタイプで、単独での道路横断には検証されていません。ここでの検出は模擬です。白杖や盲導犬などの補助手段を必ず使い、周囲の交通の音に注意してください。",
+  settingsTitle:"設定", setSpoken:"音声ガイド", setSpokenDesc:"画面読み上げ機能がすでに更新を読み上げる場合は、二重に聞こえないようオフにしてください。",
+  setVoice:"音声コマンド", setVoiceDesc:"「開始」「停止」「ヘルプ」を聞き取ります。", on:"オン", off:"オフ", testSpeech:"音声ガイドをテスト", testVib:"振動をテスト",
+  researchTitle:"研究テスト", vrHeading:"VRテストモード",
+  vrText:"将来のHCI評価環境です。仮想空間での道路横断シナリオにより、実環境でのテストの前に音声・振動フィードバックを評価できます。",
+  vrTag:"コンセプトのみ。未実装です。", modelHeading:"検出モデル",
+  modelText:"検出モデルは読み込まれていません。このプロトタイプの検出は、インターフェースを単独で検討できるよう模擬したものです。",
+  aboutTitle:"このプロジェクトについて",
+  aboutText:"横断アシスタントは、コンピュータビジョンの出力を、視覚障害のある歩行者向けの分かりやすい音声と振動のガイドに変える方法を探る研究です。日本の点字ブロックやメロディ信号を補完することを目指しています。",
+  pipeHeading:"仕組み（コンセプト）", pipe1:"カメラ／AI", pipe1s:"横断歩道・信号・距離", pipe2:"HCIによる解釈", pipe2s:"検出結果を1つの分かりやすい指示にします",
+  pipe3:"音声＋振動フィードバック", pipe3s:"話し言葉と対応する振動", pipe4:"ユーザー", pipe4s:"手を使わずに行動します",
+  principlesHeading:"設計方針", prin1:"音声を最優先にし、画面は補助にします。", prin2:"安全に関わる情報を色だけで伝えません。", prin3:"確信が持てないときは、渡るよう案内しません。",
+  startAssist:"支援を開始しました。研究用プロトタイプのため、検出は模擬です。", stopAssist:"支援を停止しました。",
+  crosswalk:"前方に横断歩道があります。4メートル先です。", dist10:"前方に横断歩道があります。10メートル先です。", dist5:"前方に横断歩道があります。5メートル先です。", dist2:"横断歩道は2メートル先から始まります。",
+  red:"歩行者用の赤信号を検出しました。待ってください。", green:"歩行者用の青信号を検出しました。渡る前に車の通行を確認してください。",
+  uncertain:"信号を確認できませんでした。待ってください。",
+  camDenied:"カメラの許可がありません。検出は実行できません。", camNone:"カメラが見つかりません。検出は実行できません。", camFail:"カメラを開始できませんでした。検出は実行できません。",
+  testSpeechMsg:"音声ガイドのテストです。", vibUnsupported:"この端末では振動に対応していません。", langSet:"言語を日本語に設定しました。",
+  lookAngle:"道路や横断歩道が見えません。カメラの角度を変えてください。",
+  cantSeeStop:"まだ進路が見えません。止まってください。支援を停止します。",
+  pathBack:"進路が見えるようになりました。",
+  lblVeh:"車両", veh_none:"検出なし", veh_yes:"接近中",
+  btnRoad:"道路上（0 m）", btnVeh:"車両が接近",
+  demoTry:"警告のテスト：赤信号、2 m、道路上、車両が接近の順に押します。",
+  onCrossing:"横断歩道の上です。注意してください。", vehicleNear:"車両が接近しています。その場で止まってください。",
+  dangerHeading:"危険", dismissBtn:"警告を解除", callBtn:"{name}に電話",
+  danger1:"止まってください。前方は赤信号です。近づかないでください。",
+  danger2:"今すぐ止まってください！赤信号の道路上にいます。",
+  danger3:"危険です！車両が接近しています。今すぐ止まってください。",
+  callingContact:"緊急連絡先に知らせます。", noContact:"緊急連絡先が設定されていません。設定で追加してください。",
+  dangerClear:"危険は解消されました。", pat_danger:"強い振動が続きます",
+  alertsHeading:"警告",
+  alertsText:"カメラが道路や横断歩道を30秒間見つけられない場合、カメラの角度を変えるようお知らせします。さらに1分経っても見えない場合は、支援が自動的に停止します。赤信号の道路に向かって、または道路の中に進むと、「止まって」という音声と強い振動でお知らせします。道路の中にいて車両が接近した場合は、緊急連絡先に知らせます（設定で登録してください）。これらは研究用プロトタイプの機能で、検証されていません。",
+  ecHeading:"緊急連絡先", ecNote:"この端末にのみ保存されます。", ecName:"連絡先の名前", ecNumber:"連絡先の電話番号",
+  ecSave:"連絡先を保存", ecSaved:"連絡先を保存しました。",
+  ecDial:"緊急時に電話アプリを自動で開く",
+  ecDialDesc:"ウェブアプリは自分で電話をかけられません。この番号で電話アプリを開きますが、多くの端末では通話ボタンを押す必要があります。誤発信を防ぐため、テスト中はオフにしてください。"
+}
+};
+let lang = 'en';
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+lang = store.get('lang', (navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en');
+let spokenOn = store.get('spoken', true);
+let voiceCmdOn = store.get('voiceCmd', true);
+let ecDial = store.get('ecDial', false);
+const t = k => (STR[lang] && STR[lang][k]) || STR.en[k] || k;
+const $ = id => document.getElementById(id);
+
+/* ======================= status ======================= */
+const synthOK = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+const vibOK = typeof navigator.vibrate === 'function';
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const S = { audio:'ready', voice:'starting', vib: vibOK ? 'available' : 'unsupported', cam:'off', det:'sim' };
+let voices = [];
+let active = false, gesture = false, current = 'home';
+
+function renderStatus(){
+  $('stAudio').textContent = t('audio_' + S.audio);
+  $('stVoice').textContent = t('voice_' + S.voice);
+  $('stVib').textContent   = t('vib_' + S.vib);
+  $('stCam').textContent   = t('cam_' + S.cam);
+  $('stDet').textContent   = t('det_' + S.det);
+}
+const normLang = l => (l || '').replace('_', '-').toLowerCase();
+function refreshAudioStatus(){
+  if(!synthOK) S.audio = 'unavail';
+  else if(!spokenOn) S.audio = 'off';
+  else if(lang === 'ja' && voices.length && !voices.some(v => normLang(v.lang).startsWith('ja'))) S.audio = 'nojp';
+  else S.audio = 'ready';
+  renderStatus();
+}
+function loadVoices(){
+  if(synthOK){ try{ voices = speechSynthesis.getVoices() || []; }catch(e){} }
+  refreshAudioStatus();
+}
+
+/* ======================= speech output ======================= */
+let lastKey = null;
+function speakText(text, interrupt){
+  try{
+    if(interrupt) speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const target = lang === 'ja' ? 'ja-JP' : 'en-US';
+    u.lang = target; u.rate = 0.95;
+    const v = voices.find(v => normLang(v.lang) === target.toLowerCase()) || voices.find(v => normLang(v.lang).startsWith(lang));
+    if(v) u.voice = v;
+    u.onerror = ev => {
+      if(ev && (ev.error === 'synthesis-unavailable' || ev.error === 'language-unavailable')){ S.audio = 'unavail'; renderStatus(); }
+    };
+    speechSynthesis.speak(u);
+  }catch(e){ S.audio = 'unavail'; renderStatus(); }
+}
+// Speak aloud when app voice is on. Otherwise feed the screen-reader live regions, so nothing is spoken twice.
+function say(key, o){
+  o = o || {};
+  const text = t(key);
+  if(o.remember !== false) lastKey = key;
+  $('guidanceText').textContent = text;
+  $('announce').textContent = ''; $('alert').textContent = '';
+  if(synthOK && spokenOn){ speakText(text, o.interrupt !== false); }
+  else setTimeout(() => { (o.urgent ? $('alert') : $('announce')).textContent = text; }, 60);
+}
+
+/* ======================= haptics ======================= */
+const PATTERNS = { start:[80], crosswalk:[80], distance:[80,70,80], red:[400,300,400], green:[80,80,80,80,80,80], uncertain:[120,50,120,50,120,50,120], danger:[500,150,500,150,500,150,500] };
+let curPattern = null;
+function showPattern(name){
+  const strip = $('patternStrip'); strip.textContent = '';
+  PATTERNS[name].forEach((ms, i) => {
+    const s = document.createElement('span');
+    s.className = i % 2 === 0 ? 'on' : 'off';
+    s.style.flexGrow = ms; s.style.flexBasis = '0';
+    strip.appendChild(s);
+  });
+  curPattern = name;
+  $('patternLabel').textContent = t('pat_' + name);
+}
+function haptic(name){
+  showPattern(name);
+  if(vibOK){ try{ navigator.vibrate(PATTERNS[name]); }catch(e){} }
+}
+
+/* ======================= screens ======================= */
+function show(name){
+  document.querySelectorAll('main > .screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
+  current = name; window.scrollTo(0, 0);
+  const h = document.querySelector('#screen-' + name + ' h1');
+  if(h) h.focus();
+}
+document.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => show(b.dataset.nav)));
+
+/* ======================= camera ======================= */
+let stream = null;
+function stopStream(){
+  if(stream){ try{ stream.getTracks().forEach(tr => tr.stop()); }catch(e){} stream = null; }
+  const v = $('camVideo'); try{ v.srcObject = null; }catch(e){} v.hidden = true;
+}
+async function startCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    S.cam = 'error'; renderStatus(); say('camFail', {urgent:true, remember:false, interrupt:false}); return;
+  }
+  S.cam = 'starting'; renderStatus();
+  try{
+    const st = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}, audio:false});
+    if(!active){ try{ st.getTracks().forEach(tr => tr.stop()); }catch(e){} return; }
+    stream = st;
+    const v = $('camVideo'); v.srcObject = st; v.hidden = false;
+    S.cam = 'on';
+    lastSeen = Date.now(); warnedAt = 0;   // start counting "nothing seen" from now
+  }catch(e){
+    const n = e && e.name;
+    S.cam = n === 'NotFoundError' ? 'none' : (n === 'NotAllowedError' || n === 'SecurityError') ? 'denied' : 'error';
+    say(S.cam === 'denied' ? 'camDenied' : S.cam === 'none' ? 'camNone' : 'camFail', {urgent:true, remember:false, interrupt:false});
+  }
+  renderStatus();
+}
+
+/* ======================= detections (simulated) ======================= */
+// A real detection model would call updateScene({cross, sig, dist, vehicle}) with its results.
+// The demo buttons call the same function, so the safety logic below works for both.
+const D = { cross:'none', sig:'none', dist:null, vehicle:false, inRoad:false };
+function renderDetection(){
+  $('dCross').textContent = t('cross_' + D.cross);
+  $('dSig').textContent = t('sig_' + D.sig);
+  $('dDist').textContent = D.dist == null ? '—' : D.dist + ' m';
+  $('dVeh').textContent = t(D.vehicle ? 'veh_yes' : 'veh_none');
+  $('zebra').hidden = D.cross !== 'yes';
+  const dot = $('sigdot');
+  dot.hidden = D.sig === 'none';
+  dot.style.background = D.sig === 'red' ? '#FF5A4D' : D.sig === 'green' ? '#2EE59D' : '#F5C544';
+}
+function resetDetection(){
+  Object.assign(D, { cross:'none', sig:'none', dist:null, vehicle:false, inRoad:false });
+  $('bVeh').setAttribute('aria-pressed', 'false');
+  renderDetection();
+  $('guidanceText').textContent = ''; $('patternStrip').textContent = ''; $('patternLabel').textContent = '';
+}
+
+/* ======================= timing (change these numbers if you want) ======================= */
+const WATCH = {
+  firstWarnMs: 30000,   // nothing seen for 30 s -> "please change the camera angle"
+  stopAfterMs: 60000,   // still nothing 60 s after that warning -> assistance stops by itself
+  dangerRepeatMs: 4000  // how often the danger message repeats while the danger continues
+};
+
+/* ======================= "can't see the road" watchdog ======================= */
+let lastSeen = 0, warnedAt = 0, watchTimer = null;
+function startWatchdog(){ stopWatchdog(); lastSeen = Date.now(); warnedAt = 0; watchTimer = setInterval(watchTick, 1000); }
+function stopWatchdog(){ clearInterval(watchTimer); watchTimer = null; warnedAt = 0; }
+function markSeen(){
+  lastSeen = Date.now();
+  if(warnedAt){ warnedAt = 0; say('pathBack', {remember:false}); }
+}
+function watchTick(){
+  if(!active || S.cam !== 'on' || danger > 0) return;   // only count time while the camera is really on
+  const now = Date.now();
+  if(!warnedAt){
+    if(now - lastSeen >= WATCH.firstWarnMs){ warnedAt = now; say('lookAngle', {urgent:true}); haptic('uncertain'); }
+  } else if(now - warnedAt >= WATCH.stopAfterMs){
+    stopAssistance('cantSeeStop');
+  }
+}
+
+/* ======================= danger alerts ======================= */
+let danger = 0, alertMuted = false, dangerTimer = null, called = false, justCleared = false;
+function dangerLevel(){
+  if(!active) return 0;
+  const red = D.sig === 'red';
+  if(D.inRoad && D.vehicle && D.sig !== 'green') return 3;  // in the road, vehicle approaching
+  if(red && D.inRoad) return 2;                              // in the road on a red signal
+  if(red && D.dist !== null && D.dist <= 2) return 1;       // walking toward a red signal
+  return 0;
+}
+function hideDanger(){ $('dangerBox').hidden = true; $('callLink').hidden = true; }
+function stopDangerLoop(){ clearInterval(dangerTimer); dangerTimer = null; }
+function resetSafety(){ danger = 0; alertMuted = false; called = false; justCleared = false; stopDangerLoop(); hideDanger(); }
+function openDialer(href){ try{ window.location.href = href; }catch(e){} }
+function emergencyCall(){
+  const num = String(store.get('ecNumber', '') || '').trim();
+  const name = String(store.get('ecName', '') || '').trim();
+  const link = $('callLink');
+  if(!num){ link.hidden = true; say('noContact', {urgent:true, remember:false, interrupt:false}); return; }
+  link.href = 'tel:' + num.replace(/[^\d+]/g, '');
+  link.textContent = t('callBtn').replace('{name}', name || num);
+  link.hidden = false;
+  say('callingContact', {urgent:true, remember:false, interrupt:false});
+  if(ecDial && !called){ called = true; openDialer(link.href); }
+}
+function raiseDanger(lvl){
+  if(alertMuted) return;
+  const box = $('dangerBox'), wasHidden = box.hidden;
+  box.hidden = false;
+  $('dangerText').textContent = t('danger' + lvl);
+  say('danger' + lvl, {urgent:true});
+  haptic('danger');
+  stopDangerLoop();
+  dangerTimer = setInterval(() => {
+    if(!active || danger === 0 || alertMuted){ stopDangerLoop(); return; }
+    say('danger' + danger, {urgent:true}); haptic('danger');
+  }, WATCH.dangerRepeatMs);
+  if(lvl === 3) emergencyCall();
+  if(wasHidden) box.focus();
+}
+function evaluateSafety(){
+  const lvl = dangerLevel(), prev = danger;
+  justCleared = false;
+  if(lvl === prev) return lvl;
+  danger = lvl;
+  if(lvl === 0){ stopDangerLoop(); hideDanger(); called = false; alertMuted = false; justCleared = prev > 0; return 0; }
+  if(lvl > prev) alertMuted = false;
+  raiseDanger(lvl);
+  return lvl;
+}
+function dismissDanger(){ alertMuted = true; stopDangerLoop(); hideDanger(); }
+
+/* ======================= scene updates (model or demo buttons) ======================= */
+function updateScene(u){
+  Object.assign(D, u);
+  D.inRoad = D.dist !== null && D.dist <= 0;
+  renderDetection();
+  if(D.cross === 'yes' || D.sig === 'red' || D.sig === 'green') markSeen();   // "the camera can see the road"
+  return evaluateSafety();
+}
+function simCrosswalk(){ if(updateScene({cross:'yes', dist:4}) === 0){ say('crosswalk'); haptic('crosswalk'); } }
+function simDistance(n){ if(updateScene({cross:'yes', dist:n}) === 0){ say(n === 0 ? 'onCrossing' : 'dist' + n); haptic('distance'); } }
+function simSignal(c){ if(updateScene({sig:c}) === 0){ say(c); haptic(c); } }
+function simUncertain(){ updateScene({sig:'unc'}); if(danger === 0){ say('uncertain', {urgent:true}); haptic('uncertain'); } }
+function simVehicle(){
+  const on = !D.vehicle;
+  $('bVeh').setAttribute('aria-pressed', String(on));
+  if(updateScene({vehicle:on}) === 0){
+    if(on){ say('vehicleNear'); haptic('uncertain'); }
+    else if(justCleared){ say('dangerClear', {remember:false}); }
+  }
+}
+
+/* ======================= start / stop ======================= */
+function renderMainBtn(){
+  const b = $('mainBtn');
+  b.textContent = t(active ? 'stopBtn' : 'startBtn');
+  b.classList.toggle('stop', active);
+}
+function startAssistance(){
+  if(active) return;
+  active = true; gesture = true;
+  if(current !== 'home') show('home');
+  renderMainBtn(); $('livePanel').hidden = false; resetDetection(); resetSafety();
+  say('startAssist'); haptic('start');
+  startWatchdog();
+  startCamera();                         // any camera error is announced after the start message
+  if(voiceCmdOn && SR) startListening();
+}
+function stopAssistance(reasonKey){
+  if(!active) return;
+  active = false;
+  const reason = typeof reasonKey === 'string' ? reasonKey : null;
+  stopWatchdog(); resetSafety();
+  stopStream(); S.cam = 'off';
+  renderMainBtn(); $('livePanel').hidden = true;
+  say(reason || 'stopAssist', {remember:false, urgent: !!reason});
+  renderStatus();
+}
+$('mainBtn').addEventListener('click', () => active ? stopAssistance() : startAssistance());
+$('repeatBtn').addEventListener('click', () => { if(lastKey) say(lastKey); });
+$('bCross').addEventListener('click', simCrosswalk);
+$('bUnc').addEventListener('click', simUncertain);
+$('bRed').addEventListener('click', () => simSignal('red'));
+$('bGreen').addEventListener('click', () => simSignal('green'));
+$('bRoad').addEventListener('click', () => simDistance(0));
+$('bVeh').addEventListener('click', simVehicle);
+$('dismissBtn').addEventListener('click', dismissDanger);
+document.querySelectorAll('[data-dist]').forEach(b => b.addEventListener('click', () => simDistance(parseInt(b.dataset.dist, 10))));
+
+/* ======================= voice commands ======================= */
+let rec = null, wantListen = false, errCount = 0, restartTimer = null;
+function handleCommand(said){
+  said = (said || '').toLowerCase();
+  if(/\bstop\b|停止|終了|止めて/.test(said)) stopAssistance();
+  else if(/\bstart\b|\bcamera\b|開始|スタート|カメラ/.test(said)) startAssistance();
+  else if(/\bhelp\b|ヘルプ|助けて/.test(said)) show('help');
+}
+function startListening(){
+  if(!SR){ S.voice = 'unavail'; renderStatus(); return; }
+  wantListen = true;
+  if(rec) return;
+  if(S.voice !== 'listening'){ S.voice = 'starting'; renderStatus(); }
+  const r = new SR();
+  rec = r;
+  r.lang = lang === 'ja' ? 'ja-JP' : 'en-US';
+  r.continuous = false; r.interimResults = false;
+  r.onstart = () => { S.voice = 'listening'; renderStatus(); };
+  r.onresult = e => { errCount = 0; try{ handleCommand(e.results[0][0].transcript); }catch(x){} };
+  r.onerror = e => {
+    const err = e && e.error;
+    if(err === 'not-allowed' || err === 'service-not-allowed'){ wantListen = false; S.voice = gesture ? 'denied' : 'wait'; }
+    else if(err !== 'no-speech' && err !== 'aborted'){ errCount++; if(errCount >= 4){ wantListen = false; S.voice = 'unavail'; } }
+    renderStatus();
+  };
+  r.onend = () => {
+    if(rec === r) rec = null;
+    if(wantListen){ clearTimeout(restartTimer); restartTimer = setTimeout(() => { if(wantListen) startListening(); }, 400); }
+  };
+  try{ r.start(); }catch(e){ rec = null; wantListen = false; S.voice = 'unavail'; renderStatus(); }
+}
+function stopListening(){
+  wantListen = false; clearTimeout(restartTimer);
+  if(rec){ const r = rec; rec = null; try{ r.abort(); }catch(e){} }
+  S.voice = SR ? 'off' : 'unavail'; renderStatus();
+}
+
+/* ======================= settings & help ======================= */
+function renderSwitches(){
+  [['swSpoken', spokenOn], ['swVoice', voiceCmdOn], ['swDial', ecDial]].forEach(([id, on]) => {
+    const b = $(id); b.setAttribute('aria-checked', String(on)); b.textContent = t(on ? 'on' : 'off');
+  });
+}
+$('swSpoken').addEventListener('click', () => {
+  spokenOn = !spokenOn; store.set('spoken', spokenOn);
+  if(!spokenOn && synthOK){ try{ speechSynthesis.cancel(); }catch(e){} }
+  refreshAudioStatus(); renderSwitches();
+});
+$('swVoice').addEventListener('click', () => {
+  voiceCmdOn = !voiceCmdOn; store.set('voiceCmd', voiceCmdOn); gesture = true;
+  if(voiceCmdOn) startListening(); else stopListening();
+  renderSwitches();
+});
+$('swDial').addEventListener('click', () => { ecDial = !ecDial; store.set('ecDial', ecDial); renderSwitches(); });
+$('ecSave').addEventListener('click', () => {
+  store.set('ecName', $('ecName').value.trim()); store.set('ecNumber', $('ecNumber').value.trim());
+  const r = $('ecSaved'); r.hidden = false; r.textContent = t('ecSaved');
+  say('ecSaved', {remember:false});
+});
+$('testSpeech').addEventListener('click', () => say('testSpeechMsg', {remember:false}));
+$('testVib').addEventListener('click', () => {
+  if(!vibOK){ say('vibUnsupported', {remember:false}); return; }
+  haptic('crosswalk');
+});
+$('sosBtn').addEventListener('click', () => {
+  const r = $('sosResult'); r.hidden = false; r.textContent = t('sosDemo');
+  say('sosDemo', {remember:false});
+});
+document.querySelectorAll('[data-play]').forEach(b => b.addEventListener('click', () => {
+  const n = b.dataset.play; haptic(n); say('vd_' + n, {remember:false});
+}));
+
+/* ======================= language ======================= */
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.title = t('title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-label]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nLabel)));
+  document.querySelectorAll('[data-play]').forEach(b => b.setAttribute('aria-label', t('playBtn') + ': ' + t('vd_' + b.dataset.play)));
+  document.querySelectorAll('[data-dist]').forEach(b => b.setAttribute('aria-label', t('distLabel').replace('{n}', b.dataset.dist)));
+  $('langEn').setAttribute('aria-pressed', String(lang === 'en'));
+  $('langJa').setAttribute('aria-pressed', String(lang === 'ja'));
+  renderMainBtn(); renderStatus(); renderDetection(); renderSwitches();
+  if(curPattern) $('patternLabel').textContent = t('pat_' + curPattern);
+  if(!$('sosResult').hidden) $('sosResult').textContent = t('sosDemo');
+  if(!$('ecSaved').hidden) $('ecSaved').textContent = t('ecSaved');
+  if(danger > 0 && !$('dangerBox').hidden) $('dangerText').textContent = t('danger' + danger);
+  if(!$('callLink').hidden){ const nm = String(store.get('ecName', '') || '').trim() || String(store.get('ecNumber', '') || '').trim(); $('callLink').textContent = t('callBtn').replace('{name}', nm); }
+}
+function setLang(l){
+  if(l === lang) return;
+  lang = l; store.set('lang', l);
+  applyLang(); refreshAudioStatus();
+  if(wantListen || rec){ stopListening(); if(voiceCmdOn) startListening(); }
+  say('langSet', {remember:false});
+}
+$('langEn').addEventListener('click', () => setLang('en'));
+$('langJa').addEventListener('click', () => setLang('ja'));
+
+/* ======================= init ======================= */
+if(synthOK){ try{ speechSynthesis.onvoiceschanged = loadVoices; }catch(e){} }
+applyLang(); loadVoices();
+$('ecName').value = store.get('ecName', ''); $('ecNumber').value = store.get('ecNumber', '');
+if(!SR) S.voice = 'unavail';
+else if(!voiceCmdOn) S.voice = 'off';
+renderStatus();
+if(SR && voiceCmdOn) startListening();   // try right away; if the browser needs a tap first, status says so honestly
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js"></script>
+<script src="./research-lab.js"></script>
+</body>
+</html>
